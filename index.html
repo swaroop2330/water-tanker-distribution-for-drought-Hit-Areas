@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Water Tanker Distribution Scheduler for Drought-Hit Areas</title>
+  <meta name="description" content="AI-powered water tanker scheduling system using greedy and priority algorithms to allocate limited water tanker trips to the most water-stressed localities first during drought emergencies." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════ NAVBAR ═══════════════════════ -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-brand">
+      <div class="nav-logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="15" stroke="url(#ng)" stroke-width="2"/>
+          <path d="M16 6 C10 12 8 16 10 20 C12 24 20 24 22 20 C24 16 22 12 16 6Z" fill="url(#nf)" opacity="0.9"/>
+          <defs>
+            <linearGradient id="ng" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#38bdf8"/><stop offset="1" stop-color="#0ea5e9"/>
+            </linearGradient>
+            <linearGradient id="nf" x1="16" y1="6" x2="16" y2="24" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#7dd3fc"/><stop offset="1" stop-color="#0284c7"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="nav-title">Water Tanker Distribution Scheduler for Drought-Hit Areas</span>
+      </div>
+      <span class="nav-badge">DROUGHT RELIEF</span>
+    </div>
+    <div class="nav-links">
+      <a href="#dashboard" class="nav-link active" id="link-dashboard">Dashboard</a>
+      <a href="#localities" class="nav-link" id="link-localities">Localities</a>
+      <a href="#tankers" class="nav-link" id="link-tankers">Tankers</a>
+      <a href="#schedule" class="nav-link" id="link-schedule">Schedule</a>
+      <a href="#analytics" class="nav-link" id="link-analytics">Analytics</a>
+      <a href="#database" class="nav-link" id="link-database">Database</a>
+      <button class="btn-run-scheduler" id="btn-run-main">Run Scheduler</button>
+    </div>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- ═══════════════════════ HERO ═══════════════════════ -->
+  <section class="hero" id="dashboard">
+    <div class="hero-bg">
+      <div class="hero-overlay"></div>
+      <div class="hero-particles" id="hero-particles"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-tag">
+        <span class="pulse-dot"></span>
+        LIVE DROUGHT EMERGENCY RESPONSE SYSTEM
+      </div>
+      <h1 class="hero-title">
+        <span class="gradient-text">Water Tanker Distribution</span><br/>
+        Scheduler for<br/>
+        Drought-Hit Areas
+      </h1>
+      <p class="hero-subtitle">
+        Priority-driven greedy-algorithm scheduling that routes limited water tanker trips 
+        to the most water-stressed communities first — ensuring fairness during acute drought emergencies.
+      </p>
+      <div class="hero-actions">
+        <button class="btn-primary" id="btn-hero-schedule">Run Priority Scheduler</button>
+        <button class="btn-secondary" id="btn-hero-add">+ Add Locality</button>
+      </div>
+      <div class="hero-stats" id="hero-stats">
+        <div class="hero-stat">
+          <span class="stat-num" id="hs-tankers">5</span>
+          <span class="stat-lbl">Active Tankers</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="stat-num" id="hs-localities">8</span>
+          <span class="stat-lbl">Localities</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="stat-num" id="hs-critical">3</span>
+          <span class="stat-lbl">Critical Zones</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="stat-num" id="hs-population">142K</span>
+          <span class="stat-lbl">People Served</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="map-card" id="live-map-card">
+        <div class="map-header">
+          <span class="map-title">Live Distribution Map</span>
+          <span class="map-live-badge">LIVE</span>
+        </div>
+        <canvas id="mapCanvas" width="400" height="300"></canvas>
+        <div class="map-legend">
+          <span class="legend-item"><span class="dot critical"></span>Critical</span>
+          <span class="legend-item"><span class="dot high"></span>High</span>
+          <span class="legend-item"><span class="dot medium"></span>Medium</span>
+          <span class="legend-item"><span class="dot low"></span>Low</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════ ALERT BANNER ═══════════════════════ -->
+  <div class="alert-banner" id="alert-banner">
+    <div class="alert-content">
+      <span class="alert-icon">Warning</span>
+      <span class="alert-text" id="alert-text">Emergency Protocol Active — 3 localities with critical water shortage detected. Prioritizing distribution routes.</span>
+      <button class="alert-close" id="alert-close">X</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ MAIN CONTENT ═══════════════════════ -->
+  <main class="main-content">
+
+    <!-- QUICK STATS ROW -->
+    <section class="stats-row" id="quick-stats">
+      <div class="stat-card" id="sc-trips">
+        <div class="stat-card-icon blue">Trips</div>
+        <div class="stat-card-body">
+          <div class="stat-card-num" id="sc-trips-num">0</div>
+          <div class="stat-card-lbl">Trips Scheduled</div>
+          <div class="stat-card-sub" id="sc-trips-sub">Run scheduler to populate</div>
+        </div>
+        <div class="stat-card-trend up" id="sc-trips-trend">Up 12%</div>
+      </div>
+      <div class="stat-card" id="sc-water">
+        <div class="stat-card-icon teal">Water</div>
+        <div class="stat-card-body">
+          <div class="stat-card-num" id="sc-water-num">0 L</div>
+          <div class="stat-card-lbl">Water Allocated</div>
+          <div class="stat-card-sub" id="sc-water-sub">Per day capacity</div>
+        </div>
+        <div class="stat-card-trend up">Up 8%</div>
+      </div>
+      <div class="stat-card" id="sc-coverage">
+        <div class="stat-card-icon amber">Coverage</div>
+        <div class="stat-card-body">
+          <div class="stat-card-num" id="sc-coverage-num">0%</div>
+          <div class="stat-card-lbl">Coverage Rate</div>
+          <div class="stat-card-sub" id="sc-coverage-sub">Localities served today</div>
+        </div>
+        <div class="stat-card-trend neutral">Stable</div>
+      </div>
+      <div class="stat-card" id="sc-priority">
+        <div class="stat-card-icon red">Critical</div>
+        <div class="stat-card-body">
+          <div class="stat-card-num" id="sc-priority-num">0</div>
+          <div class="stat-card-lbl">Critical Localities</div>
+          <div class="stat-card-sub" id="sc-priority-sub">Severity score >= 8</div>
+        </div>
+        <div class="stat-card-trend down">Needs attention</div>
+      </div>
+    </section>
+
+    <!-- LOCALITIES SECTION -->
+    <section class="section" id="localities">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Localities and Shortage Severity</h2>
+          <p class="section-subtitle">Manage water-stressed communities. Higher priority score = more urgent dispatch.</p>
+        </div>
+        <div class="section-actions">
+          <button class="btn-icon" id="btn-sort-priority" title="Sort by priority">Sort by Priority</button>
+          <button class="btn-primary sm" id="btn-add-locality">+ Add Locality</button>
+        </div>
+      </div>
+
+      <div class="localities-grid" id="localities-grid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- ADD LOCALITY MODAL -->
+    <div class="modal-overlay" id="modal-locality" style="display:none">
+      <div class="modal" id="modal-locality-box">
+        <div class="modal-header">
+          <h3 id="modal-locality-title">Add New Locality</h3>
+          <button class="modal-close" id="btn-close-locality-modal">X</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group full">
+              <label for="inp-locality-name">Locality Name *</label>
+              <input type="text" id="inp-locality-name" placeholder="e.g., Ramnagar Village" />
+            </div>
+            <div class="form-group">
+              <label for="inp-population">Population *</label>
+              <input type="number" id="inp-population" placeholder="e.g., 5000" min="1" />
+            </div>
+            <div class="form-group">
+              <label for="inp-severity">Shortage Severity (1-10) *</label>
+              <div class="slider-row">
+                <input type="range" id="inp-severity" min="1" max="10" value="5" />
+                <span class="slider-val" id="severity-display">5</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="inp-distance">Distance from Hub (km)</label>
+              <input type="number" id="inp-distance" placeholder="e.g., 12" min="1" />
+            </div>
+            <div class="form-group">
+              <label for="inp-days-without">Days Without Water</label>
+              <input type="number" id="inp-days-without" placeholder="e.g., 3" min="0" />
+            </div>
+            <div class="form-group full">
+              <label for="inp-special-needs">Special Needs (optional)</label>
+              <input type="text" id="inp-special-needs" placeholder="e.g., hospital, school, elderly population" />
+            </div>
+          </div>
+          <div class="priority-preview" id="priority-preview">
+            <span class="pp-label">Calculated Priority Score:</span>
+            <span class="pp-score" id="pp-score-val">--</span>
+            <span class="pp-badge" id="pp-badge">--</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="btn-cancel-locality">Cancel</button>
+          <button class="btn-primary" id="btn-save-locality">Save Locality</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TANKERS SECTION -->
+    <section class="section" id="tankers">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Tanker Fleet Management</h2>
+          <p class="section-subtitle">Configure your fleet. Each tanker has capacity, trips-per-day, and status.</p>
+        </div>
+        <div class="section-actions">
+          <button class="btn-primary sm" id="btn-add-tanker">+ Add Tanker</button>
+        </div>
+      </div>
+      <div class="tankers-grid" id="tankers-grid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- ADD TANKER MODAL -->
+    <div class="modal-overlay" id="modal-tanker" style="display:none">
+      <div class="modal" id="modal-tanker-box">
+        <div class="modal-header">
+          <h3 id="modal-tanker-title">Add New Tanker</h3>
+          <button class="modal-close" id="btn-close-tanker-modal">X</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="inp-tanker-id">Tanker ID *</label>
+              <input type="text" id="inp-tanker-id" placeholder="e.g., TK-06" />
+            </div>
+            <div class="form-group">
+              <label for="inp-tanker-capacity">Capacity (Litres) *</label>
+              <input type="number" id="inp-tanker-capacity" placeholder="e.g., 12000" min="1000" />
+            </div>
+            <div class="form-group">
+              <label for="inp-tanker-trips">Max Trips per Day *</label>
+              <input type="number" id="inp-tanker-trips" placeholder="e.g., 4" min="1" max="10" />
+            </div>
+            <div class="form-group">
+              <label for="inp-tanker-driver">Driver Name</label>
+              <input type="text" id="inp-tanker-driver" placeholder="e.g., Ramesh Kumar" />
+            </div>
+            <div class="form-group full">
+              <label for="inp-tanker-status">Status</label>
+              <select id="inp-tanker-status">
+                <option value="available">Available</option>
+                <option value="maintenance">Under Maintenance</option>
+                <option value="deployed">Deployed</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="btn-cancel-tanker">Cancel</button>
+          <button class="btn-primary" id="btn-save-tanker">Save Tanker</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE SECTION -->
+    <section class="section" id="schedule">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Distribution Schedule</h2>
+          <p class="section-subtitle">Greedy priority-queue algorithm assigns trips to highest-need localities first.</p>
+        </div>
+        <div class="section-actions">
+          <button class="btn-primary" id="btn-run-scheduler">Run Scheduler</button>
+          <button class="btn-icon" id="btn-export-schedule">Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Algorithm Explainer -->
+      <div class="algo-card">
+        <div class="algo-icon">Algorithm</div>
+        <div class="algo-content">
+          <div class="algo-title">Priority Queue + Greedy Algorithm</div>
+          <div class="algo-desc">
+            Each locality receives a composite priority score computed as:<br/>
+            Score = (Severity x 3) + (DaysWithoutWater x 2) + (Population / 10000) + SpecialNeedsBonus<br/>
+            The scheduler greedily assigns the next available tanker to the highest-score locality until all tanker trips are exhausted or all localities are served.
+          </div>
+        </div>
+        <div class="algo-complexity">
+          <div class="complexity-item"><span class="complexity-lbl">Time</span><span class="complexity-val">O(n log n)</span></div>
+          <div class="complexity-item"><span class="complexity-lbl">Space</span><span class="complexity-val">O(n + m)</span></div>
+        </div>
+      </div>
+
+      <!-- Schedule Results -->
+      <div class="schedule-empty" id="schedule-empty">
+        <div class="empty-icon">Schedule</div>
+        <div class="empty-title">No Schedule Generated Yet</div>
+        <div class="empty-sub">Click Run Scheduler to compute optimal water distribution routes using the priority algorithm.</div>
+        <button class="btn-primary" id="btn-run-empty">Run Scheduler Now</button>
+      </div>
+
+      <div class="schedule-results" id="schedule-results" style="display:none">
+        <div class="schedule-summary" id="schedule-summary"></div>
+        <div class="schedule-timeline" id="schedule-timeline"></div>
+      </div>
+    </section>
+
+    <!-- ANALYTICS SECTION -->
+    <section class="section" id="analytics">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Analytics and Insights</h2>
+          <p class="section-subtitle">Visual breakdown of water stress distribution and allocation efficiency.</p>
+        </div>
+      </div>
+      <div class="analytics-grid">
+        <div class="chart-card">
+          <div class="chart-title">Severity Distribution</div>
+          <canvas id="chart-severity" width="350" height="250"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Water Demand vs Supply (Litres per Day)</div>
+          <canvas id="chart-supply" width="350" height="250"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Population vs Priority Score</div>
+          <canvas id="chart-priority" width="350" height="250"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Tanker Utilization</div>
+          <canvas id="chart-tanker" width="350" height="250"></canvas>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ═════ DATABASE EXPLORER SECTION ═════ -->
+    <section class="section" id="database">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">&#128451; Database Explorer</h2>
+          <p class="section-subtitle">Live IndexedDB — all data persists across browser sessions automatically.</p>
+        </div>
+        <div class="section-actions">
+          <button class="btn-icon" id="btn-db-refresh">&#8635; Refresh</button>
+          <button class="btn-icon" id="btn-db-clear-schedules">Clear History</button>
+          <button class="btn-primary sm" id="btn-db-export-json">&#8595; Export JSON</button>
+        </div>
+      </div>
+
+      <!-- DB Stats Cards -->
+      <div class="db-stats-row" id="db-stats-row">
+        <div class="db-stat-card">
+          <div class="db-stat-icon localities">&#127968;</div>
+          <div class="db-stat-body">
+            <div class="db-stat-num" id="db-count-localities">--</div>
+            <div class="db-stat-lbl">Localities Store</div>
+          </div>
+          <div class="db-store-badge">localities</div>
+        </div>
+        <div class="db-stat-card">
+          <div class="db-stat-icon tankers">&#128666;</div>
+          <div class="db-stat-body">
+            <div class="db-stat-num" id="db-count-tankers">--</div>
+            <div class="db-stat-lbl">Tankers Store</div>
+          </div>
+          <div class="db-store-badge">tankers</div>
+        </div>
+        <div class="db-stat-card">
+          <div class="db-stat-icon schedules">&#128203;</div>
+          <div class="db-stat-body">
+            <div class="db-stat-num" id="db-count-schedules">--</div>
+            <div class="db-stat-lbl">Schedule Runs</div>
+          </div>
+          <div class="db-store-badge">schedules</div>
+        </div>
+        <div class="db-stat-card info-card">
+          <div class="db-info-title">&#9432; IndexedDB Info</div>
+          <div class="db-info-row"><span>Database</span><span class="db-info-val">AquaRouteDB</span></div>
+          <div class="db-info-row"><span>Version</span><span class="db-info-val">1</span></div>
+          <div class="db-info-row"><span>Status</span><span class="db-info-val db-status" id="db-status-badge">Connecting...</span></div>
+        </div>
+      </div>
+
+      <!-- DB Tabs -->
+      <div class="db-tabs">
+        <button class="db-tab active" data-tab="localities" id="dbtab-localities">Localities</button>
+        <button class="db-tab" data-tab="tankers" id="dbtab-tankers">Tankers</button>
+        <button class="db-tab" data-tab="schedules" id="dbtab-schedules">Schedule History</button>
+      </div>
+
+      <!-- DB Table -->
+      <div class="db-table-wrap">
+        <div class="db-table-toolbar">
+          <span class="db-table-title" id="db-table-title">localities</span>
+          <input class="db-search" id="db-search" type="text" placeholder="Search records..." />
+        </div>
+        <div class="db-table-container" id="db-table-container">
+          <div class="db-loading" id="db-loading">Loading records...</div>
+          <table class="db-table" id="db-table" style="display:none">
+            <thead id="db-thead"></thead>
+            <tbody id="db-tbody"></tbody>
+          </table>
+          <div class="db-empty" id="db-empty" style="display:none">No records found in this store.</div>
+        </div>
+        <div class="db-table-footer">
+          <span class="db-row-count" id="db-row-count">0 records</span>
+          <span class="db-footer-note">Auto-saved to IndexedDB on every change</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="nav-logo">
+          <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="15" stroke="url(#fg)" stroke-width="2"/>
+            <path d="M16 6 C10 12 8 16 10 20 C12 24 20 24 22 20 C24 16 22 12 16 6Z" fill="url(#ff)" opacity="0.9"/>
+            <defs>
+              <linearGradient id="fg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38bdf8"/><stop offset="1" stop-color="#0ea5e9"/>
+              </linearGradient>
+              <linearGradient id="ff" x1="16" y1="6" x2="16" y2="24" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#7dd3fc"/><stop offset="1" stop-color="#0284c7"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <span>Water Tanker Distribution Scheduler</span>
+        </div>
+        <p>Water Tanker Distribution Scheduler for Drought-Hit Areas</p>
+      </div>
+      <div class="footer-info">
+        <span>Built with care for humanitarian relief</span>
+        <span>Priority Queue + Greedy Algorithm</span>
+        <span>OOP Architecture</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- TOAST -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
